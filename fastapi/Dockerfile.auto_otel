@@ -1,0 +1,20 @@
+FROM python:3.10
+
+WORKDIR /code
+
+RUN pip install \
+    --no-cache-dir \
+    --upgrade \
+    fastapi uvicorn sqlalchemy opentelemetry-distro opentelemetry-exporter-otlp
+    # fastapi uvicorn sqlalchemy opentelemetry-distro opentelemetry-exporter-otlp opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-sqlalchemy opentelemetry-instrumentation-asgi
+
+RUN opentelemetry-bootstrap -a install
+
+COPY ./auto /code/sql_app
+
+CMD opentelemetry-instrument \
+    --traces_exporter console,otlp \
+    --metrics_exporter console,otlp \
+    --service_name my-fastapi-service \
+    --exporter_otlp_endpoint 0.0.0.0:4317 \
+    uvicorn sql_app.main:app --host 0.0.0.0 --port 8000
