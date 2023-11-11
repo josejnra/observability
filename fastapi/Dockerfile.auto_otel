@@ -6,16 +6,18 @@ RUN pip install \
     --no-cache-dir \
     --upgrade \
     fastapi uvicorn sqlalchemy opentelemetry-distro opentelemetry-exporter-otlp
-    # fastapi uvicorn sqlalchemy opentelemetry-distro opentelemetry-exporter-otlp opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-sqlalchemy opentelemetry-instrumentation-asgi
+    # fastapi uvicorn sqlalchemy opentelemetry-distro opentelemetry-exporter-otlp opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-sqlalchemy opentelemetry-instrumentation-asgi opentelemetry-instrumentation-logging
 
 RUN opentelemetry-bootstrap -a install
 
-COPY ./auto /code/sql_app
+COPY ./auto /code/auto
+
+ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+ENV OTEL_EXPORTER_OTLP_INSECURE=true
 
 CMD opentelemetry-instrument \
-    --traces_exporter console,otlp \
-    --metrics_exporter console,otlp \
-    --logs_exporter console,otlp \
-    --service_name my-fastapi-service \
-    --exporter_otlp_endpoint 0.0.0.0:4317 \
-    uvicorn sql_app.main:app --host 0.0.0.0 --port 8000
+    --traces_exporter console \
+    --metrics_exporter console \
+    --logs_exporter console \
+    --service_name my-fastapi-app \
+    uvicorn auto.main:app --host 0.0.0.0 --port 8000

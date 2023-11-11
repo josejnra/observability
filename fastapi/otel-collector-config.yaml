@@ -1,14 +1,57 @@
+# Collector configuration reference
+# https://opentelemetry.io/docs/collector/configuration/
+
+
+# receivers reference
+# https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver
 receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
+# exporters reference
+# https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
 exporters:
   zipkin:
     endpoint: "http://zipkin:9411/api/v2/spans"
     tls:
       insecure: true
+  elasticsearch/trace:
+    endpoints: [http://elasticsearch:9200]
+    traces_index: trace_index
+  elasticsearch/log:
+    endpoints: [http://elasticsearch:9200]
+    logs_index: otel_log_index
+    sending_queue:
+      enabled: true
+      num_consumers: 20
+      queue_size: 1000
+  # prometheus:
+  #   endpoint: localhost:9091
+  #   const_labels:
+  #     app: auto_otel_app
+  #   metric_expiration: 180m
+  prometheusremotewrite:
+    # endpoint: http://prometheus:9090/api/v1/otlp/v1/metrics
+    # endpoint: http://prometheus:9090/api/v1/write
+    # endpoint: http://prometheus:9090/api/prom/push
+    endpoint: http://prometheus:9090/api/v1/write
+    tls:
+      insecure: true
+    external_labels:
+      app: auto_otel_app
+      env: demo
+  # logging:
+  #   verbosity: detailed
+  # prometheusremotewrite:
+  #   # endpoint: https://pushgateway:9091/api/v1/push
+  #   endpoint: https://pushgateway:9091/api/v1/write
+  #   external_labels:
+  #     app: auto_otel_app
+  #     env: demo
 
 processors:
   batch:
@@ -17,5 +60,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [zipkin]
       processors: [batch]
+      exporters: [zipkin, elasticsearch/trace]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch/log]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
