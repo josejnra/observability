@@ -303,3 +303,4 @@ cython_debug/
 # End of https://www.toptal.com/developers/gitignore/api/python,node
 
 requirements.txt
+*sql_app.db
