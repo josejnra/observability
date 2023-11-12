@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-	"name": "Tracing studies",
+	"name": "observability studies",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	// binding .ssh dir into dev container for fixing issue with git
@@ -9,7 +9,7 @@
 		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
 	],
 
-	"runArgs": ["--name=vscode-tracing"],
+	"runArgs": ["--name=vscode-observability"],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
@@ -46,12 +46,12 @@
 					}
 				},
 				// "terminal.integrated.defaultProfile.linux": "poetry-shell",  # spawns a terminal on top of sh 
-				"python.defaultInterpreterPath": "/workspaces/tracing/.venv/bin/python",
-				"mypy.dmypyExecutable": "/workspaces/tracing/.venv/bin/dmypy",
-				"mypy-type-checker.path": ["/workspaces/tracing/.venv/bin/mypy"],
-				"python.testing.pytestPath": "/workspaces/tracing/.venv/bin/pytest",
-				"flake8.interpreter": ["/workspaces/tracing/.venv/bin/flake8"],
-				"flake8.path": ["/workspaces/tracing/.venv/bin/flake8"]
+				"python.defaultInterpreterPath": "/workspaces/observability/.venv/bin/python",
+				"mypy.dmypyExecutable": "/workspaces/observability/.venv/bin/dmypy",
+				"mypy-type-checker.path": ["/workspaces/observability/.venv/bin/mypy"],
+				"python.testing.pytestPath": "/workspaces/observability/.venv/bin/pytest",
+				"flake8.interpreter": ["/workspaces/observability/.venv/bin/flake8"],
+				"flake8.path": ["/workspaces/observability/.venv/bin/flake8"]
 			}
 		}
 	},

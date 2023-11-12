@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "tracing"
+name = "observability"
 version = "0.1.0"
-description = "my studies on tracing"
+description = "my studies on observability"
 authors = ["José Nunes <josenunesra@gmail.com>"]
 readme = "README.md"
-repository = "https://github.com/josejnra/tracing"
-homepage = "https://github.com/josejnra/tracing"
-documentation = "https://github.com/josejnra/tracing"
+repository = "https://github.com/josejnra/observability"
+homepage = "https://github.com/josejnra/observability"
+documentation = "https://github.com/josejnra/observability"
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
