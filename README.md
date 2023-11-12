@@ -15,6 +15,17 @@ OpenTelemetry is an example of mechanism by which application code is instrument
 
 ## Distributed Tracing
 
+A distributed trace, more commonly known as a trace, records the paths taken by requests (made by an application or end-user) as they propagate through multi-service architectures, like microservice and serverless applications.
+Without tracing, it is challenging to pinpoint the cause of performance problems in a distributed system.
+It improves the visibility of our application or system’s health and lets us debug behavior that is difficult to reproduce locally. Tracing is essential for distributed systems, which commonly have nondeterministic problems or are too complicated to reproduce locally.
+
+<p align="center">
+    <img src="images/waterfall-trace.svg" alt="Waterfall Trace" />
+</p>
+
+A trace is made of one or more spans. The first span represents the root span. Each root span represents a request from start to finish. The spans underneath the parent provide a more in-depth context of what occurs during a request (or what steps make up a request).
+A trace is built from spans. Each span represents an interaction, like an HTTP request, a DB query, a serverless function invocation, etc. A trace is essentially a tree of spans. Based on the collected span data, a distributed tracing platform can capture all the interactions between the different architectural components and tie them together with a trace ID. Then, the various architectural components and the interactions between them can be correlated for different purposes, one of them is visualization in a tree-like manner.
+
 ### Logs
 A log is a timestamped message emitted by services or other components. Unlike traces, however, they are not necessarily associated with any particular user request or transaction. They are found almost everywhere in software, and have been heavily relied on in the past by both developers and operators alike to help them understand system behavior.
 
@@ -30,25 +41,21 @@ They become far more useful when they are included as part of a span, or when th
 A span represents a unit of work or operation. It tracks specific operations that a request makes, painting a picture of what happened during the time in which that operation was executed.
 A span contains name, time-related data, structured log messages, and other metadata (that is, Attributes) to provide information about the operation it tracks.
 
-
-## Distributed Traces
-A distributed trace, more commonly known as a trace, records the paths taken by requests (made by an application or end-user) as they propagate through multi-service architectures, like microservice and serverless applications.
-Without tracing, it is challenging to pinpoint the cause of performance problems in a distributed system.
-It improves the visibility of our application or system’s health and lets us debug behavior that is difficult to reproduce locally. Tracing is essential for distributed systems, which commonly have nondeterministic problems or are too complicated to reproduce locally.
-
-<p align="center">
-    <img src="images/waterfall-trace.svg" alt="Waterfall Trace" />
-</p>
-
-A trace is made of one or more spans. The first span represents the root span. Each root span represents a request from start to finish. The spans underneath the parent provide a more in-depth context of what occurs during a request (or what steps make up a request).
-A trace is built from spans. Each span represents an interaction, like an HTTP request, a DB query, a serverless function invocation, etc. A trace is essentially a tree of spans. Based on the collected span data, a distributed tracing platform can capture all the interactions between the different architectural components and tie them together with a trace ID. Then, the various architectural components and the interactions between them can be correlated for different purposes, one of them is visualization in a tree-like manner.
-
 # Instrumentation 
 
 Instrumentation is the process of adding code to your application so you can understand its inner state. Instrumented applications measure what code is doing when it responds to active requests by collecting data such as metrics, events, logs, and traces (MELT). So when you fully instrument, you set up how you want to monitor logs and also define how you'll look at other data that can give you more information about your system.
 
 In contrast to an application that isn’t instrumented and only uses point-in-time logs, an instrumented application tracks as much information as possible about the service’s operations and behavior. It provides more detail about what is happening, so you can see relationships between requests. 
 
+Instrumentation types:
+- manual, instrumented manually, take a dependency on the API and the SDK.
+- automatic, instrumented automatically. Can add observability to your application without the need to touch the code.
+- programmatic, is a kind of instrumentation that requires minimal instrumentation code to be added to the application. Only some instrumentation libraries offer additional capabilities that give you greater control over the instrumentation process when used programmatically.
+
+As an example of tool for instrumentation there is [Open Telemetry](OpenTelemetry.md).
+
 ## References
 
-- [Instrumentation](https://newrelic.com/blog/best-practices/logging-vs-instrumentation)
+- [Instrumentation](https://opentelemetry.io/docs/concepts/instrumentation/)
+- [Logging vs Instrumentation](https://newrelic.com/blog/best-practices/logging-vs-instrumentation)
+- [Python Instrumentation](https://opentelemetry.io/docs/instrumentation/python/automatic/example/)
