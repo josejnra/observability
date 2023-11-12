@@ -10,7 +10,7 @@ RUN pip install \
 
 RUN opentelemetry-bootstrap -a install
 
-COPY ./auto /code/auto
+COPY ./prog /code/prog
 
 ENV OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
 ENV OTEL_EXPORTER_OTLP_INSECURE=true
@@ -19,5 +19,5 @@ CMD opentelemetry-instrument \
     --traces_exporter console \
     --metrics_exporter console \
     --logs_exporter console \
-    --service_name auto-otel-app \
-    uvicorn auto.main:app --host 0.0.0.0 --port 8000
+    --service_name prog-otel-app \
+    uvicorn prog.main:app --host 0.0.0.0 --port 8000

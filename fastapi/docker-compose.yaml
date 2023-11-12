@@ -6,7 +6,7 @@ networks:
 services:
 
   elasticsearch:
-    image: elasticsearch:7.17.14
+    image: elastic/elasticsearch:7.17.14
     container_name: elasticsearch
     networks:
       - otel
@@ -16,8 +16,21 @@ services:
     ports:
       - 9200:9200
 
+  apm-server:  # service for pushing traces to elastic
+    image: elastic/apm-server:7.17.14
+    container_name: apm-server
+    networks:
+      - otel
+    ports:
+      - 8200:8200
+      - 1514:1514/udp
+    environment:
+      - output.elasticsearch.hosts=[elasticsearch:9200]
+    depends_on:
+      - elasticsearch
+ 
   kibana:
-    image: kibana:7.17.14
+    image: elastic/kibana:7.17.14
     container_name: kibana
     networks:
       - otel
@@ -32,8 +45,7 @@ services:
     networks:
       - otel
     command:
-      - --enable-feature=otlp-write-receiver
-      - --enable-feature=native-histograms
+      # - --enable-feature=remote-write-receiver  # deprecated
       - --web.enable-remote-write-receiver
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
@@ -63,7 +75,7 @@ services:
     ports:
       - 4317:4317  # OTLP gRPC receiver
       - 4318:4318  # OTLP http receiver
-      - 55679:55679
+      - 55679:55679  # zpages extension which trace operations via /debug/tracez
       - 8888:8888  # Prometheus metrics exposed by the collector
       - 8889:8889  # Prometheus exporter metrics
     networks:
@@ -72,14 +84,69 @@ services:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
 
-  auto_otel_app:
+  auto_otel_app-1:
     image: auto_otel_app
     build: 
       context: .
       dockerfile: Dockerfile.auto_otel
-    container_name: auto_otel_app
+    container_name: auto_otel_app-1
+    deploy:
+      mode: replicated
+      replicas: 1
     ports:
       - 8000:8000
+    networks:
+      - otel
+    environment:
+      - APP_LOGLEVEL=DEBUG
+      - OTEL_EXPORTER_OTLP_INSECURE=true
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+    command: >-
+      opentelemetry-instrument 
+        --exporter_otlp_endpoint otel_collector:4317
+        --exporter_otlp_metrics_endpoint otel_collector:4317
+        --traces_exporter otlp
+        --logs_exporter otlp
+        --metrics_exporter otlp
+        --service_name auto-otel-app-1
+        uvicorn auto.main:app --host 0.0.0.0 --port 8000
+    # command: opentelemetry-instrument --traces_exporter console --metrics_exporter none --logs_exporter none --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
+    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter none --logs_exporter console --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
+    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter console --logs_exporter none --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
+    # command: uvicorn auto.main:app --host 0.0.0.0 --port 8000 --reload
+    # docker run -it --rm -p 8000:8000 auto_otel_app bash
+
+  auto_otel_app-2:
+    image: auto_otel_app
+    build: 
+      context: .
+      dockerfile: Dockerfile.auto_otel
+    container_name: auto_otel_app-2
+    ports:
+      - 8001:8000
+    networks:
+      - otel
+    environment:
+      - APP_LOGLEVEL=INFO
+      - OTEL_EXPORTER_OTLP_INSECURE=true
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+    command: >-
+      opentelemetry-instrument 
+        --exporter_otlp_endpoint otel_collector:4317
+        --traces_exporter otlp
+        --logs_exporter otlp
+        --metrics_exporter otlp
+        --service_name auto-otel-app-2
+        uvicorn auto.main:app --host 0.0.0.0 --port 8000
+
+  prog_otel_app:
+    image: prog_otel_app
+    build: 
+      context: .
+      dockerfile: Dockerfile.prog_otel
+    container_name: prog_otel_app
+    ports:
+      - 8002:8000
     networks:
       - otel
     environment:
@@ -90,12 +157,14 @@ services:
         --exporter_otlp_endpoint otel_collector:4317
         --traces_exporter otlp
         --logs_exporter otlp
-        --exporter_otlp_metrics_endpoint otel_collector:8888
-        --metrics_exporter console,otlp
-        --service_name my-fastapi-app
-        uvicorn auto.main:app --host 0.0.0.0 --port 8000
-    # command: opentelemetry-instrument --traces_exporter console --metrics_exporter none --logs_exporter none --service_name my-fastapi-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
-    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter none --logs_exporter console --service_name my-fastapi-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
-    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter console --logs_exporter none --service_name my-fastapi-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
-    # command: uvicorn auto.main:app --host 0.0.0.0 --port 8000 --reload
-    # docker run -it --rm -p 8000:8000 auto_otel_app bash
+        --metrics_exporter otlp
+        --service_name prog-otel-app
+        --log_level debug
+        uvicorn prog.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - otel_collector
+    # command: opentelemetry-instrument --traces_exporter console --metrics_exporter none --logs_exporter none --service_name prog-otel-app uvicorn prog.main:app --host 0.0.0.0 --port 8000
+    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter none --logs_exporter console --service_name prog-otel-app uvicorn prog.main:app --host 0.0.0.0 --port 8000
+    # command: opentelemetry-instrument --traces_exporter none --metrics_exporter console --logs_exporter none --service_name prog-otel-app uvicorn prgo.main:app --host 0.0.0.0 --port 8000
+    # command: uvicorn prog.main:app --host 0.0.0.0 --port 8000 --reload
+    # docker run -it --rm -p 8000:8000 prog_otel_app bash

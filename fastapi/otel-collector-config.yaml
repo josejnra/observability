@@ -1,6 +1,9 @@
 # Collector configuration reference
 # https://opentelemetry.io/docs/collector/configuration/
 
+extensions:
+  zpages:
+    endpoint: 0.0.0.0:55679
 
 # receivers reference
 # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver
@@ -15,58 +18,64 @@ receivers:
 # exporters reference
 # https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
 exporters:
+  debug:
+    verbosity: detailed
   zipkin:
     endpoint: "http://zipkin:9411/api/v2/spans"
     tls:
       insecure: true
-  elasticsearch/trace:
+  elasticsearch/trace:  # export directly to elasticsearch
     endpoints: [http://elasticsearch:9200]
-    traces_index: trace_index
-  elasticsearch/log:
+    traces_index: otel_trace_index
+  elasticsearch/log:  # export directly to elasticsearch
     endpoints: [http://elasticsearch:9200]
     logs_index: otel_log_index
     sending_queue:
       enabled: true
       num_consumers: 20
       queue_size: 1000
-  # prometheus:
-  #   endpoint: localhost:9091
-  #   const_labels:
-  #     app: auto_otel_app
-  #   metric_expiration: 180m
-  prometheusremotewrite:
-    # endpoint: http://prometheus:9090/api/v1/otlp/v1/metrics
-    # endpoint: http://prometheus:9090/api/v1/write
-    # endpoint: http://prometheus:9090/api/prom/push
+  otlp: 
+    # Elastic APM server https endpoint without the "https://" prefix
+    # Handled by Elastic Observability
+    endpoint: apm-server:8200
+    tls:
+      insecure: true
+  prometheus:  # expose metrics in prometheus format at otel collector
+    endpoint: otel_collector:8889
+    metric_expiration: 180m
+    const_labels:
+      env: test
+  prometheusremotewrite:  # push metrics to prometheus
     endpoint: http://prometheus:9090/api/v1/write
     tls:
       insecure: true
     external_labels:
-      app: auto_otel_app
       env: demo
-  # logging:
-  #   verbosity: detailed
-  # prometheusremotewrite:
-  #   # endpoint: https://pushgateway:9091/api/v1/push
-  #   endpoint: https://pushgateway:9091/api/v1/write
-  #   external_labels:
-  #     app: auto_otel_app
-  #     env: demo
+  logging:
+    verbosity: detailed
 
 processors:
   batch:
 
+# https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/troubleshooting.md
 service:
+  telemetry:
+    logs:
+      level: "debug"
+    metrics:
+      address: ":8888"  # otel collector metrics prometheus format exposed at /metrics
+  extensions:
+    - zpages
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [zipkin, elasticsearch/trace]
+      exporters: [debug, zipkin, otlp]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [elasticsearch/log]
+      exporters: [logging, elasticsearch/log]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [prometheusremotewrite]
+      exporters: [prometheus, prometheusremotewrite, otlp]

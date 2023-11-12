@@ -21,8 +21,8 @@ rule_files:
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: 'otel_collector'
-    scrape_interval:     1s
+    scrape_interval: 1s
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
     static_configs:
-      - targets: [ 'otel_collector:8888' ]
+      - targets: [ 'otel_collector:8889' ]

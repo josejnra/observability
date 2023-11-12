@@ -6,6 +6,8 @@ from . import crud, models, schemas
 from .database import SessionLocal, engine
 from .logger import logger
 
+# from opentelemetry import trace, metrics
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -14,6 +16,13 @@ app = FastAPI()
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
     logger.debug("Processing request for endpoint: %s | %s", request.method, request.url)
+    # # Init tracer
+    # tracer = trace.get_tracer_provider().get_tracer(__name__)
+
+    # # Init metrics + create a counter metric
+    # meter = metrics.get_meter_provider().get_meter(__name__)
+    # request_counter = meter.create_counter(name="request_counter", description="Number of requests", unit="1")
+    # request_counter.add(1)
 
     response = Response("Internal server error", status_code=500)
     try:
@@ -29,15 +38,6 @@ async def db_session_middleware(request: Request, call_next):
 # Dependency, with middleware
 def get_db(request: Request):
     return request.state.db
-
-
-# # Dependency, without middleware
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 
 @app.post("/users/", response_model=schemas.User)

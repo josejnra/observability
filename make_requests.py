@@ -13,15 +13,15 @@ def make_post_call(endpoint: str, body: dict = {}) -> requests.Response:
     return requests.post(endpoint, json=body)
 
 
-def sum_call(n: int = 1):
-    endpoint = "http://localhost:8000/sum/"
+def sum_call(port: int, n: int = 1):
+    endpoint = f"http://localhost:{port}/sum/"
     for _ in range(n):
         params = {"val1": randint(0, 10000), "val2": randint(0, 10000)}
         make_get_call(endpoint, params)
 
 
-def create_users(n: int = 1) -> List[Dict[str, str]]:
-    endpoint = "http://localhost:8000/users/"
+def create_users(port: int, n: int = 1) -> List[Dict[str, str]]:
+    endpoint = f"http://localhost:{port}/users/"
     users_created: List[Dict[str, str]] = []
 
     for _ in range(n):
@@ -31,25 +31,56 @@ def create_users(n: int = 1) -> List[Dict[str, str]]:
     return users_created
 
 
-def create_items_for_users(users: List[Dict[str, str]]):
+def create_items_for_users(port: int, users: List[Dict[str, str]]):
     for user in users:
-        endpoint = f"http://localhost:8000/users/{user['id']}/items/"
+        endpoint = f"http://localhost:{port}/users/{user['id']}/items/"
         params = {"title": " ".join(Faker("en_US").words()), "description": Faker("en_US").paragraph(nb_sentences=3)}
         make_post_call(endpoint, params)
 
 
-def read_items():
-    endpoint = "http://localhost:8000/items/"
-    print(make_get_call(endpoint).text)
+def read_items(port: int):
+    endpoint = f"http://localhost:{port}/items/"
+    make_get_call(endpoint).text
 
 
-def read_users():
-    endpoint = "http://localhost:8000/users/"
-    print(make_get_call(endpoint).text)
+def read_users(port: int):
+    endpoint = f"http://localhost:{port}/users/"
+    make_get_call(endpoint).text
+
+
+def auto_otel_app():
+    print("making requests to auto otel app...")
+    # auto otel app
+    AUTO_OTEL_APP_PORT = 8000
+    users = create_users(AUTO_OTEL_APP_PORT, 10)
+    create_items_for_users(AUTO_OTEL_APP_PORT, users)
+    read_users(AUTO_OTEL_APP_PORT)
+    read_items(AUTO_OTEL_APP_PORT)
+    print("finished requests to auto otel app")
+
+def auto_otel_app2():
+    print("making requests to auto otel app...")
+    # auto otel app
+    AUTO_OTEL_APP_PORT = 8001
+    users = create_users(AUTO_OTEL_APP_PORT, 10)
+    create_items_for_users(AUTO_OTEL_APP_PORT, users)
+    read_users(AUTO_OTEL_APP_PORT)
+    read_items(AUTO_OTEL_APP_PORT)
+    print("finished requests to auto otel app")
+
+
+def prog_otel_app():
+    print("making requests to prog otel app...")
+    # programmatic otel app
+    PROG_OTEL_APP_PORT = 8002
+    users = create_users(PROG_OTEL_APP_PORT, 10)
+    create_items_for_users(PROG_OTEL_APP_PORT, users)
+    read_users(PROG_OTEL_APP_PORT)
+    read_items(PROG_OTEL_APP_PORT)
+    print("finished requests to prog otel app")
 
 
 if __name__ == "__main__":
-    users = create_users(1)
-    create_items_for_users(users)
-    read_users()
-    read_items()
+    auto_otel_app()
+    auto_otel_app2()
+    prog_otel_app()
