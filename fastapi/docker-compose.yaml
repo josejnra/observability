@@ -68,6 +68,7 @@ services:
       - otel
   # default user: admin
   # default password: admin
+  # dashboard for otel-collector metrics: https://grafana.com/grafana/dashboards/15983-opentelemetry-collector/
 
   otel_collector:
     image: otel/opentelemetry-collector-contrib
@@ -84,12 +85,12 @@ services:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
 
-  auto_otel_app-1:
+  auto_otel_app:
     image: auto_otel_app
     build: 
       context: .
       dockerfile: Dockerfile.auto_otel
-    container_name: auto_otel_app-1
+    container_name: auto_otel_app
     deploy:
       mode: replicated
       replicas: 1
@@ -108,36 +109,13 @@ services:
         --traces_exporter otlp
         --logs_exporter otlp
         --metrics_exporter otlp
-        --service_name auto-otel-app-1
+        --service_name auto-otel-app
         uvicorn auto.main:app --host 0.0.0.0 --port 8000
     # command: opentelemetry-instrument --traces_exporter console --metrics_exporter none --logs_exporter none --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
     # command: opentelemetry-instrument --traces_exporter none --metrics_exporter none --logs_exporter console --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
     # command: opentelemetry-instrument --traces_exporter none --metrics_exporter console --logs_exporter none --service_name auto-otel-app uvicorn auto.main:app --host 0.0.0.0 --port 8000
     # command: uvicorn auto.main:app --host 0.0.0.0 --port 8000 --reload
     # docker run -it --rm -p 8000:8000 auto_otel_app bash
-
-  auto_otel_app-2:
-    image: auto_otel_app
-    build: 
-      context: .
-      dockerfile: Dockerfile.auto_otel
-    container_name: auto_otel_app-2
-    ports:
-      - 8001:8000
-    networks:
-      - otel
-    environment:
-      - APP_LOGLEVEL=INFO
-      - OTEL_EXPORTER_OTLP_INSECURE=true
-      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
-    command: >-
-      opentelemetry-instrument 
-        --exporter_otlp_endpoint otel_collector:4317
-        --traces_exporter otlp
-        --logs_exporter otlp
-        --metrics_exporter otlp
-        --service_name auto-otel-app-2
-        uvicorn auto.main:app --host 0.0.0.0 --port 8000
 
   prog_otel_app:
     image: prog_otel_app
@@ -146,10 +124,11 @@ services:
       dockerfile: Dockerfile.prog_otel
     container_name: prog_otel_app
     ports:
-      - 8002:8000
+      - 8001:8000
     networks:
       - otel
     environment:
+      - APP_LOGLEVEL=INFO
       - OTEL_EXPORTER_OTLP_INSECURE=true
       - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
     command: >-

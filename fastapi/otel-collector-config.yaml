@@ -20,6 +20,10 @@ receivers:
 exporters:
   debug:
     verbosity: detailed
+  logging:
+    verbosity: detailed
+
+  # tracing
   zipkin:
     endpoint: "http://zipkin:9411/api/v2/spans"
     tls:
@@ -27,6 +31,14 @@ exporters:
   elasticsearch/trace:  # export directly to elasticsearch
     endpoints: [http://elasticsearch:9200]
     traces_index: otel_trace_index
+  otlp: 
+    # Elastic APM server https endpoint without the "https://" prefix
+    # Handled by Elastic Observability
+    endpoint: apm-server:8200
+    tls:
+      insecure: true
+
+  # log
   elasticsearch/log:  # export directly to elasticsearch
     endpoints: [http://elasticsearch:9200]
     logs_index: otel_log_index
@@ -34,12 +46,8 @@ exporters:
       enabled: true
       num_consumers: 20
       queue_size: 1000
-  otlp: 
-    # Elastic APM server https endpoint without the "https://" prefix
-    # Handled by Elastic Observability
-    endpoint: apm-server:8200
-    tls:
-      insecure: true
+  
+  # metrics
   prometheus:  # expose metrics in prometheus format at otel collector
     endpoint: otel_collector:8889
     metric_expiration: 180m
@@ -51,8 +59,6 @@ exporters:
       insecure: true
     external_labels:
       env: demo
-  logging:
-    verbosity: detailed
 
 processors:
   batch:
@@ -64,8 +70,11 @@ service:
       level: "debug"
     metrics:
       address: ":8888"  # otel collector metrics prometheus format exposed at /metrics
+      level: detailed
+
   extensions:
     - zpages
+
   pipelines:
     traces:
       receivers: [otlp]

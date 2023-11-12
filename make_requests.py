@@ -58,21 +58,11 @@ def auto_otel_app():
     read_items(AUTO_OTEL_APP_PORT)
     print("finished requests to auto otel app")
 
-def auto_otel_app2():
-    print("making requests to auto otel app...")
-    # auto otel app
-    AUTO_OTEL_APP_PORT = 8001
-    users = create_users(AUTO_OTEL_APP_PORT, 10)
-    create_items_for_users(AUTO_OTEL_APP_PORT, users)
-    read_users(AUTO_OTEL_APP_PORT)
-    read_items(AUTO_OTEL_APP_PORT)
-    print("finished requests to auto otel app")
-
 
 def prog_otel_app():
     print("making requests to prog otel app...")
     # programmatic otel app
-    PROG_OTEL_APP_PORT = 8002
+    PROG_OTEL_APP_PORT = 8001
     users = create_users(PROG_OTEL_APP_PORT, 10)
     create_items_for_users(PROG_OTEL_APP_PORT, users)
     read_users(PROG_OTEL_APP_PORT)
@@ -82,5 +72,4 @@ def prog_otel_app():
 
 if __name__ == "__main__":
     auto_otel_app()
-    auto_otel_app2()
     prog_otel_app()
