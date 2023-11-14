@@ -27,11 +27,15 @@ trace.set_tracer_provider(provider)
 tracer = trace.get_tracer("my.tracer.name")
 
 
+@tracer.start_as_current_span("sum")
 def sum(a: int, b: int):
     return a + b
 
 
+@tracer.start_as_current_span("divide")
 def divide(a: int, b: int):
+    span = trace.get_current_span()
+    span.set_attribute("is_child_span", True)
     return a / b
 
 
@@ -42,35 +46,30 @@ def main():
         val_b = 15
         # Attributes are key-value pairs that contain metadata that you can use to
         # annotate a Span to carry information about the operation it is tracking.
-        span.set_attributes({"method.name": "main", SpanAttributes.CODE_FUNCTION: "main"})
+        span.set_attributes({SpanAttributes.CODE_FUNCTION: "main"})
+
+        r = sum(val_a, val_b)
 
         # A Span Event can be thought of as a structured log message (or annotation) on a Span,
         # typically used to denote a meaningful, singular point in time during the Span’s duration.
         # An event is a human-readable message on a span that represents “something happening” during its lifetime.
         # Think of it as a primitive log.
-        span.add_event("Summing values", {"log.level": "DEBUG", "val.a": val_a, "val.b": val_b})
+        if r < 0:
+            span.add_event("Sum result less than zero", {"val.a": val_a, "val.b": val_b, "result": r})
 
-        r = sum(val_a, val_b)
-        span.add_event("Sum result", {"log.level": "DEBUG", "result": r})
         # When the 'with' block goes out of scope, 'span' is closed
 
     with tracer.start_as_current_span("main-div", kind=SpanKind.INTERNAL) as span:
         val_a = 10
-        val_b = 0
-        span.set_attributes({"method.name": "main", SpanAttributes.CODE_FUNCTION: "main"})
-        span.add_event("Dividing values", {"log.level": "DEBUG", "val.a": val_a, "val.b": val_b})
+        val_b = 1
+        span.set_attributes({SpanAttributes.CODE_FUNCTION: "main"})
         try:
-            r = sum(val_a, val_b)
+            r = divide(val_a, val_b)
+            span.set_status(Status(StatusCode.OK))
         except ZeroDivisionError as e:
             span.set_status(Status(StatusCode.ERROR))
             span.record_exception(e)
-            span.add_event(
-                str(e),
-                {
-                    "log.level": "DEBUG",
-
-                },
-            )
+            span.add_event("Division by Zero", {"val.a": val_a, "val.b": val_b})
 
 
 if __name__ == "__main__":
