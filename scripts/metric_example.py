@@ -31,7 +31,9 @@ def divide(a: int, b: int):
 
 def main():
     work_counter = meter.create_counter(name="add_counter", unit="1", description="Counts the amount of work done")
-    exception_counter = meter.create_counter(name="divide_exceptions", unit="1", description="number of exceptions caught")
+    exception_counter = meter.create_counter(
+        name="divide_exceptions", unit="1", description="number of exceptions caught"
+    )
 
     sum(10, 15)
     work_counter.add(1)
