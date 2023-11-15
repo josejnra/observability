@@ -1,22 +1,30 @@
 from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.semconv.trace import SpanAttributes
-from opentelemetry.trace import Status, StatusCode, SpanKind
+from opentelemetry.trace import SpanKind, Status, StatusCode
+from opentelemetry.sdk.resources import Resource
+
+resource = Resource.create(attributes={"service.name": "trace-service-example"})
 
 # TracerProvider is a factory for Tracers. Tracer Provider is initialized once and its lifecycle matches the application’s lifecycle.
 # Tracer Provider initialization also includes Resource and Exporter initialization.
-provider = TracerProvider()
+provider = TracerProvider(resource=resource)
 
-# Trace Exporters send traces to a consumer e.g Otel Collector.
+# Trace Exporters send traces to a consumer e.g Console and Otel Collector.
 console_exporter = ConsoleSpanExporter()
+otlp_exporter = OTLPSpanExporter(endpoint="127.0.0.1:4317", insecure=True)
 
 # The BatchSpanProcessor processes spans in batches before they are exported. This is usually the right processor to use for an application.
 # In contrast, the SimpleSpanProcessor processes spans as they are created.
 # This means that if you create 5 spans, each will be processed and exported before the next span is created in code.
 # This can be helpful in scenarios where you do not want to risk losing a batch, or if you’re experimenting with OpenTelemetry in development
-processor = BatchSpanProcessor(console_exporter)
-provider.add_span_processor(processor)
+console_processor = BatchSpanProcessor(console_exporter)
+provider.add_span_processor(console_processor)
+
+otlp_processor = BatchSpanProcessor(otlp_exporter)
+provider.add_span_processor(otlp_processor)
 
 # Sets the global default tracer provider
 trace.set_tracer_provider(provider)
@@ -40,13 +48,14 @@ def divide(a: int, b: int):
 
 
 def main():
-    with tracer.start_as_current_span("main-sum", kind=SpanKind.INTERNAL) as span:
+    with tracer.start_as_current_span("main", kind=SpanKind.INTERNAL) as span:
         # do some work that 'span' will track
         val_a = 10
         val_b = 15
         # Attributes are key-value pairs that contain metadata that you can use to
         # annotate a Span to carry information about the operation it is tracking.
         span.set_attributes({SpanAttributes.CODE_FUNCTION: "main"})
+        span.set_attribute("context", str(span.get_span_context()))
 
         r = sum(val_a, val_b)
 
@@ -59,9 +68,9 @@ def main():
 
         # When the 'with' block goes out of scope, 'span' is closed
 
-    with tracer.start_as_current_span("main-div", kind=SpanKind.INTERNAL) as span:
+    with tracer.start_as_current_span("main", kind=SpanKind.INTERNAL) as span:
         val_a = 10
-        val_b = 1
+        val_b = 0
         span.set_attributes({SpanAttributes.CODE_FUNCTION: "main"})
         try:
             r = divide(val_a, val_b)
