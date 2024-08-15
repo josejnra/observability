@@ -11,6 +11,10 @@
 
 	"runArgs": ["--name=vscode-observability"],
 
+	"remoteEnv": {
+		"PYTHONPYCACHEPREFIX": "/home/vscode/.cache/cpython/"
+	},
+
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers-contrib/features/poetry:2": {
@@ -44,14 +48,8 @@
 						"path": "poetry",
 						"args": ["shell"]
 					}
-				},
+				}
 				// "terminal.integrated.defaultProfile.linux": "poetry-shell",  # spawns a terminal on top of sh 
-				"python.defaultInterpreterPath": "/workspaces/observability/.venv/bin/python",
-				"mypy.dmypyExecutable": "/workspaces/observability/.venv/bin/dmypy",
-				"mypy-type-checker.path": ["/workspaces/observability/.venv/bin/mypy"],
-				"python.testing.pytestPath": "/workspaces/observability/.venv/bin/pytest",
-				"flake8.interpreter": ["/workspaces/observability/.venv/bin/flake8"],
-				"flake8.path": ["/workspaces/observability/.venv/bin/flake8"]
 			}
 		}
 	},

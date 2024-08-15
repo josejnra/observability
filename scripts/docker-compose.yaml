@@ -1,0 +1,85 @@
+version: "3.8"
+
+networks:
+  kafka:
+
+services:
+
+  elasticsearch:
+    image: elastic/elasticsearch:8.11.0
+    container_name: elasticsearch
+    networks:
+      - kafka
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g # Xms initial size of total heap space, Xmx maximum size of total heap space
+      - ELASTIC_PASSWORD=elastic
+    ports:
+      - 9200:9200
+
+  apm-server:  # service for pushing traces to elastic
+    image: elastic/apm-server:8.11.0
+    container_name: apm-server
+    networks:
+      - kafka
+    ports:
+      - 8200:8200
+      - 1514:1514/udp
+    environment:
+      - output.elasticsearch.hosts=[elasticsearch:9200]
+    depends_on:
+      - elasticsearch
+
+  # docker exec -it elasticsearch /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+  # docker exec -it elasticsearch /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+  # docker exec -it kibana /usr/share/kibana/bin/kibana-verification-code
+ 
+  kibana:
+    image: elastic/kibana:8.11.0
+    container_name: kibana
+    networks:
+      - kafka
+    ports:
+      - 5601:5601
+    environment:
+      - KIBANA_PASSWORD=elastic
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    networks:
+      - kafka
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    networks:
+      - kafka
+  # default user: admin
+  # default password: admin
+  # dashboard for otel-collector metrics: https://grafana.com/grafana/dashboards/15983-opentelemetry-collector/
+
+  otel_collector:
+    image: otel/opentelemetry-collector-contrib
+    container_name: otel_collector
+    ports:
+      - 4317:4317  # OTLP gRPC receiver
+      - 4318:4318  # OTLP http receiver
+      - 8888:8888  # Prometheus metrics exposed by the collector
+      - 8889:8889  # Prometheus exporter metrics
+      - 1888:1888  # pprof extension
+      - 13133:13133 # health_check extension
+      - 55679:55679  # zpages extension, which trace operations via /debug/tracez
+    networks:
+      - kafka
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]

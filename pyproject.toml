@@ -63,6 +63,7 @@ skip_glob = ["templates/*"]  # nested files that isort should skip over.
 exclude = [  # regular expressions
     "templates"
 ]
+cache_dir = "/tmp/.mypy_cache"
 
 [build-system]
 requires = ["poetry-core"]
